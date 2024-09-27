@@ -1,0 +1,23 @@
+{
+  "name": "create-server-side-app",
+  "version": "1.0.0",
+  "description": "A CLI tool to set up a backend application",
+  "main": "index.js",
+  "bin": {
+    "create-server-side-app": "./index.js"
+  },
+  "dependencies": {
+    "fs-extra": "^10.0.0",
+    "yargs": "^17.0.0"
+  },
+  "keywords": [
+    "node",
+    "server",
+    "serverside",
+    "cli",
+    "backend",
+    "npm"
+  ],
+  "author": "Sujal CHaudhary",
+  "license": "ISC"
+}
