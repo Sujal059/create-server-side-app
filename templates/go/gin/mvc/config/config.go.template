@@ -1,0 +1,37 @@
+package config
+
+import (
+	"os"
+	"github.com/joho/godotenv"
+)
+
+type Config struct {
+	Port      string
+	JWTSecret string
+	DBName    string
+}
+
+func LoadConfig() *Config {
+	_ = godotenv.Load()
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		secret = "supersecretkeythatmustbeatleast32characterslong"
+	}
+
+	dbName := os.Getenv("DB_NAME")
+	if dbName == "" {
+		dbName = "app.db"
+	}
+
+	return &Config{
+		Port:      port,
+		JWTSecret: secret,
+		DBName:    dbName,
+	}
+}

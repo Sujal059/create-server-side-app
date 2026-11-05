@@ -1,0 +1,26 @@
+import { Request, Response } from 'express';
+import { AuthUseCase } from '../../../../usecases/auth.usecase';
+
+export class AuthController {
+  constructor(private authUseCase: AuthUseCase) {}
+
+  register = async (req: Request, res: Response) => {
+    try {
+      const { email, password, name } = req.body;
+      const result = await this.authUseCase.register({ email, password, name });
+      res.status(201).json({ success: true, ...result });
+    } catch (error) {
+      res.status(400).json({ success: false, message: (error as Error).message });
+    }
+  };
+
+  login = async (req: Request, res: Response) => {
+    try {
+      const { email, password } = req.body;
+      const result = await this.authUseCase.login({ email, password });
+      res.json({ success: true, ...result });
+    } catch (error) {
+      res.status(400).json({ success: false, message: (error as Error).message });
+    }
+  };
+}
