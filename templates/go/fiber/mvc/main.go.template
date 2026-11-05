@@ -1,0 +1,33 @@
+package main
+
+import (
+	"log"
+	"{{projectName}}/config"
+	"{{projectName}}/routes"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+)
+
+func main() {
+	cfg := config.LoadConfig()
+
+	// Initialize database
+	config.InitDB(cfg.DBName)
+
+	app := fiber.New(fiber.Config{
+		AppName: "{{projectName}} API",
+	})
+
+	app.Use(recover.New())
+	app.Use(logger.New())
+
+	// Register routes
+	routes.SetupRoutes(app)
+
+	log.Printf("🚀 Fiber server running on port %s", cfg.Port)
+	if err := app.Listen(":" + cfg.Port); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
+}

@@ -1,0 +1,22 @@
+package main
+
+import (
+	"log"
+	"{{projectName}}/config"
+	"{{projectName}}/routes"
+)
+
+func main() {
+	cfg := config.LoadConfig()
+
+	// Initialize database
+	config.InitDB(cfg.DBName)
+
+	// Setup routes
+	r := routes.SetupRouter()
+
+	log.Printf("🚀 Server running on port %s", cfg.Port)
+	if err := r.Run(":" + cfg.Port); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
+}

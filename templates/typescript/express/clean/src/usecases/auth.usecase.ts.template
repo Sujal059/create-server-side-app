@@ -1,0 +1,42 @@
+import bcrypt from 'bcryptjs';
+import { IUserRepository } from '../domain/repositories/user.repository';
+import { JwtService } from '../infrastructure/security/jwt.service';
+
+export class AuthUseCase {
+  constructor(
+    private userRepository: IUserRepository,
+    private jwtService: JwtService
+  ) {}
+
+  async register(data: { email: string; password: string; name?: string }) {
+    const existing = await this.userRepository.findByEmail(data.email);
+    if (existing) {
+      throw new Error('Email already in use');
+    }
+
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    const user = await this.userRepository.create({
+      email: data.email,
+      password: hashedPassword,
+      name: data.name,
+    });
+
+    const token = this.jwtService.sign({ id: user.id, email: user.email });
+    return { token, user: { id: user.id, email: user.email, name: user.name } };
+  }
+
+  async login(data: { email: string; password: string }) {
+    const user = await this.userRepository.findByEmail(data.email);
+    if (!user || !user.password) {
+      throw new Error('Invalid credentials');
+    }
+
+    const isMatch = await bcrypt.compare(data.password, user.password);
+    if (!isMatch) {
+      throw new Error('Invalid credentials');
+    }
+
+    const token = this.jwtService.sign({ id: user.id, email: user.email });
+    return { token, user: { id: user.id, email: user.email, name: user.name } };
+  }
+}

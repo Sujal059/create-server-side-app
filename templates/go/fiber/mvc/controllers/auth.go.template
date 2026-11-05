@@ -1,0 +1,110 @@
+package controllers
+
+import (
+	"time"
+	"{{projectName}}/config"
+	"{{projectName}}/models"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
+)
+
+type RegisterInput struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Name     string `json:"name"`
+}
+
+type LoginInput struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func Register(c *fiber.Ctx) error {
+	var input RegisterInput
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"success": false, "message": "Invalid input"})
+	}
+
+	if input.Email == "" || len(input.Password) < 6 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"success": false, "message": "Email and valid password required"})
+	}
+
+	var existing models.User
+	if err := config.DB.Where("email = ?", input.Email).First(&existing).Error; err == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"success": false, "message": "Email already in use"})
+	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"success": false, "message": "Failed to hash password"})
+	}
+
+	user := models.User{
+		Email:    input.Email,
+		Password: string(hashed),
+		Name:     input.Name,
+	}
+
+	if err := config.DB.Create(&user).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"success": false, "message": "Failed to create user"})
+	}
+
+	cfg := config.LoadConfig()
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id":    user.ID,
+		"email": user.Email,
+		"exp":   time.Now().Add(24 * time.Hour).Unix(),
+	})
+
+	tokenString, err := token.SignedString([]byte(cfg.JWTSecret))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"success": false, "message": "Failed to sign token"})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"success": true,
+		"token":   tokenString,
+		"user":    user,
+	})
+}
+
+func Login(c *fiber.Ctx) error {
+	var input LoginInput
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"success": false, "message": "Invalid input"})
+	}
+
+	var user models.User
+	if err := config.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"success": false, "message": "Invalid credentials"})
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"success": false, "message": "Invalid credentials"})
+	}
+
+	cfg := config.LoadConfig()
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id":    user.ID,
+		"email": user.Email,
+		"exp":   time.Now().Add(24 * time.Hour).Unix(),
+	})
+
+	tokenString, err := token.SignedString([]byte(cfg.JWTSecret))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"success": false, "message": "Failed to sign token"})
+	}
+
+	return c.JSON(fiber.Map{
+		"success": true,
+		"token":   tokenString,
+		"user":    user,
+	})
+}
+
+func GetMe(c *fiber.Ctx) error {
+	user := c.Locals("user")
+	return c.JSON(fiber.Map{"success": true, "user": user})
+}

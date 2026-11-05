@@ -1,0 +1,26 @@
+package routes
+
+import (
+	"time"
+	"{{projectName}}/controllers"
+	"{{projectName}}/middleware"
+
+	"github.com/gofiber/fiber/v2"
+)
+
+func SetupRoutes(app *fiber.App) {
+	// Health check
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"status":    "ok",
+			"service":   "{{projectName}}",
+			"timestamp": time.Now().UTC().Format(time.RFC3339),
+		})
+	})
+
+	// Auth group
+	auth := app.Group("/api/v1/auth")
+	auth.Post("/register", controllers.Register)
+	auth.Post("/login", controllers.Login)
+	auth.Get("/me", middleware.AuthMiddleware(), controllers.GetMe)
+}

@@ -1,0 +1,28 @@
+from rest_framework import generics, permissions
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.contrib.auth.models import User
+from datetime import datetime
+from .serializers import UserSerializer, RegisterSerializer
+
+class HealthCheckView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        return Response({
+            'status': 'ok',
+            'service': '{{projectName}}',
+            'timestamp': datetime.utcnow().isoformat()
+        })
+
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    permission_classes = [permissions.AllowAny]
+    serializer_class = RegisterSerializer
+
+class UserProfileView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response({'success': True, 'user': serializer.data})

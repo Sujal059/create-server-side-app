@@ -1,0 +1,32 @@
+package routes
+
+import (
+	"time"
+	"{{projectName}}/controllers"
+	"{{projectName}}/middleware"
+
+	"github.com/gin-gonic/gin"
+)
+
+func SetupRouter() *gin.Engine {
+	r := gin.Default()
+
+	// Health check
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status":    "ok",
+			"service":   "{{projectName}}",
+			"timestamp": time.Now().UTC().Format(time.RFC3339),
+		})
+	})
+
+	// Auth routes group
+	auth := r.Group("/api/v1/auth")
+	{
+		auth.POST("/register", controllers.Register)
+		auth.POST("/login", controllers.Login)
+		auth.GET("/me", middleware.AuthMiddleware(), controllers.GetMe)
+	}
+
+	return r
+}

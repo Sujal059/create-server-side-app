@@ -1,14 +1,24 @@
 {
   "name": "create-server-side-app",
-  "version": "1.0.0",
-  "description": "A CLI tool to set up a backend application",
-  "main": "index.js",
+  "version": "2.0.1",
+  "description": "Production-grade backend scaffolder for Node, Python, Java, and Go",
+  "type": "module",
   "bin": {
-    "create-server-side-app": "./index.js"
+    "create-server-side-app": "./dist/index.js"
   },
-  "dependencies": {
-    "fs-extra": "^10.0.0",
-    "yargs": "^17.0.0"
+  "scripts": {
+    "dev": "tsx src/cli/index.ts",
+    "build": "tsup src/cli/index.ts --format esm --clean --minify",
+    "test": "vitest run",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm run test"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
   },
   "keywords": [
     "node",
@@ -16,8 +26,27 @@
     "serverside",
     "cli",
     "backend",
-    "npm"
+    "npm",
+    "scaffold",
+    "backend",
+    "express",
+    "fastify",
+    "api",
+    "generator"
   ],
-  "author": "Sujal CHaudhary",
-  "license": "ISC"
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@clack/prompts": "^1.7.0",
+    "commander": "^15.0.0",
+    "execa": "^8.0.1",
+    "kolorist": "^1.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
 }

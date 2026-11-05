@@ -1,0 +1,17 @@
+import { Router } from 'express';
+import { AuthController } from '../controllers/auth.controller';
+import { createAuthMiddleware, AuthRequest } from '../middleware/auth.middleware';
+import { JwtService } from '../../../infrastructure/security/jwt.service';
+
+export const createAuthRouter = (authController: AuthController, jwtService: JwtService) => {
+  const router = Router();
+  const requireAuth = createAuthMiddleware(jwtService);
+
+  router.post('/register', authController.register);
+  router.post('/login', authController.login);
+  router.get('/me', requireAuth, (req: AuthRequest, res) => {
+    res.json({ success: true, user: req.user });
+  });
+
+  return router;
+};

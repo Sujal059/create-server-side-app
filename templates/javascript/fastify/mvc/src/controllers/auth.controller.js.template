@@ -1,0 +1,47 @@
+import bcrypt from 'bcryptjs';
+
+// In-memory demo user store (replace with your preferred ORM/DB driver)
+const users = [];
+
+export const register = async (req, reply) => {
+  const { email, password, name } = req.body || {};
+  if (!email || !password) {
+    return reply.status(400).send({ success: false, message: 'Email and password are required' });
+  }
+
+  const existing = users.find(u => u.email === email);
+  if (existing) {
+    return reply.status(400).send({ success: false, message: 'Email already in use' });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const user = { id: String(Date.now()), email, password: hashedPassword, name };
+  users.push(user);
+
+  const token = await reply.jwtSign({ id: user.id, email: user.email });
+  return reply.status(201).send({ success: true, token, user: { id: user.id, email: user.email, name: user.name } });
+};
+
+export const login = async (req, reply) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) {
+    return reply.status(400).send({ success: false, message: 'Email and password are required' });
+  }
+
+  const user = users.find(u => u.email === email);
+  if (!user) {
+    return reply.status(400).send({ success: false, message: 'Invalid credentials' });
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return reply.status(400).send({ success: false, message: 'Invalid credentials' });
+  }
+
+  const token = await reply.jwtSign({ id: user.id, email: user.email });
+  return reply.send({ success: true, token, user: { id: user.id, email: user.email, name: user.name } });
+};
+
+export const getProfile = async (req, reply) => {
+  return reply.send({ success: true, user: req.user });
+};

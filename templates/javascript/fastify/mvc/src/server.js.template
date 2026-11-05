@@ -1,0 +1,48 @@
+import Fastify from 'fastify';
+import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import jwt from '@fastify/jwt';
+import { env } from './config/env.js';
+import authRoutes from './routes/auth.routes.js';
+
+const server = Fastify({
+  logger: {
+    level: env.LOG_LEVEL,
+  },
+});
+
+async function main() {
+  await server.register(helmet);
+  await server.register(cors);
+  await server.register(jwt, {
+    secret: env.JWT_SECRET,
+  });
+
+  // Health check
+  server.get('/health', async () => {
+    return { status: 'ok', timestamp: new Date().toISOString() };
+  });
+
+  // Auth routes
+  await server.register(authRoutes, { prefix: '/api/v1/auth' });
+
+  // 404 Handler
+  server.setNotFoundHandler((request, reply) => {
+    reply.status(404).send({ success: false, message: 'Route not found' });
+  });
+
+  // Global Error Handler
+  server.setErrorHandler((error, request, reply) => {
+    server.log.error(error);
+    reply.status(500).send({ success: false, message: 'Internal server error' });
+  });
+
+  const port = parseInt(env.PORT, 10) || 3000;
+  await server.listen({ port, host: '0.0.0.0' });
+  server.log.info(`🚀 Server running on port ${port} in ${env.NODE_ENV} mode`);
+}
+
+main().catch((err) => {
+  server.log.error(err);
+  process.exit(1);
+});
